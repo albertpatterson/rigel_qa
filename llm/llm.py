@@ -38,23 +38,7 @@ class Managable_LLM(ABC):
         pass
 
 
-class TexGenerationLLM(Managable_LLM):
-    def __init__(self):
-        print("init text generation")
-        model_kwargs = {
-            "torch_dtype": torch.bfloat16,
-            "quantization_config": {
-                "load_in_4bit": True,
-                "bnb_4bit_compute_dtype": torch.bfloat16,
-            },
-        }
-
-        self._model = pipeline(
-            "text-generation",
-            model="google/gemma-2-9b-it",
-            model_kwargs=model_kwargs,
-        )
-
+class TextGenerationLLMBase(Managable_LLM):
     def generate(self, prompt: str):
         messages = [
             {"role": "user", "content": prompt},
@@ -62,6 +46,81 @@ class TexGenerationLLM(Managable_LLM):
 
         output = self._model(messages, **vars(inferenceConfig))
         return output[0]["generated_text"].strip()
+
+
+class TextGenerationLLMGemma4Bit(TextGenerationLLMBase):
+    def __init__(self):
+        self._model = pipeline(
+            "text-generation",
+            model="google/gemma-2-9b-it",
+            model_kwargs={
+                "torch_dtype": torch.bfloat16,
+                "quantization_config": {
+                    "load_in_4bit": True,
+                    "bnb_4bit_compute_dtype": torch.bfloat16,
+                },
+            },
+        )
+
+
+class TextGenerationLLMGemma8Bit(TextGenerationLLMBase):
+    def __init__(self):
+        self._model = pipeline(
+            "text-generation",
+            model="google/gemma-2-9b-it",
+            model_kwargs={
+                "torch_dtype": torch.float16,
+                "quantization_config": {
+                    "load_in_8bit": True,
+                },
+            },
+        )
+
+
+class TextGennerationLLMPhi3Mini8Bit(TextGenerationLLMBase):
+    def __init__(self):
+        self._model = pipeline(
+            "text-generation",
+            model="microsoft/Phi-3-mini-4k-instruct",
+            model_kwargs={
+                "torch_dtype": torch.float16,
+                "quantization_config": {
+                    "load_in_8bit": True,
+                },
+                "attn_implementation": "flash_attention_2",
+            },
+        )
+
+
+class TextGennerationLLMPhi3Med4Bit(TextGenerationLLMBase):
+    def __init__(self):
+        self._model = pipeline(
+            "text-generation",
+            model="microsoft/Phi-3-medium-4k-instruct",
+            model_kwargs={
+                "torch_dtype": torch.bfloat16,
+                "quantization_config": {
+                    "load_in_4bit": True,
+                    "bnb_4bit_compute_dtype": torch.bfloat16,
+                },
+                "attn_implementation": "flash_attention_2",
+            },
+        )
+
+
+class TextGennerationLLMPhi3Med8Bit(TextGenerationLLMBase):
+    def __init__(self):
+        self._model = pipeline(
+            "text-generation",
+            model="microsoft/Phi-3-medium-4k-instruct",
+            model_kwargs={
+                "torch_dtype": torch.float16,
+                "quantization_config": {
+                    "load_in_8bit": True,
+                },
+                "attn_implementation": "flash_attention_2",
+            },
+        )
 
 
 class EmbeddingLLM(Managable_LLM):
@@ -81,27 +140,30 @@ class EmbeddingLLM(Managable_LLM):
 
 
 class LLM_Manager:
-
-    # __text_generation: Managable_LLM | None = None
-    # __embedding_model: Managable_LLM | None = None
-
-    # @staticmethod
-    # def __get_model_data():
-    #     return {
-    #         "text_generation": {
-    #             "instance": LLM_Manager.__text_generation,
-    #             "constructor": TexGenerationLLM,
-    #         },
-    #         "embedding": {
-    #             "instance": LLM_Manager.__embedding_model,
-    #             "constructor": EmbeddingLLM,
-    #         },
-    #     }
-
     __model_data = {
         "text_generation": {
             "instance": None,
-            "constructor": TexGenerationLLM,
+            "constructor": TextGennerationLLMPhi3Mini8Bit,
+        },
+        "text_generation_gemma_4_bit": {
+            "instance": None,
+            "constructor": TextGenerationLLMGemma4Bit,
+        },
+        "text_generation_gemma_8_bit": {
+            "instance": None,
+            "constructor": TextGenerationLLMGemma8Bit,
+        },
+        "text_generation_phi3_mini_8_bit": {
+            "instance": None,
+            "constructor": TextGennerationLLMPhi3Mini8Bit,
+        },
+        "text_generation_phi3_med_4_bit": {
+            "instance": None,
+            "constructor": TextGennerationLLMPhi3Med4Bit,
+        },
+        "text_generation_phi3_med_8_bit": {
+            "instance": None,
+            "constructor": TextGennerationLLMPhi3Med8Bit,
         },
         "embedding": {
             "instance": None,

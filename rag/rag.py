@@ -98,13 +98,13 @@ def get_best_sources(question_context_els, answer_context_els):
     # return post_indices
 
 
-def answer_with_sources(question, max_est_tokens=4000):
+def answer_with_sources(question, max_est_tokens=4000, model_name="text_generation"):
     prompt, prompt_sources = get_blog_rag_prompt(question, max_est_tokens)
 
     # print("prompt")
     # print(prompt)
 
-    client = LLM_Manager.get_model("text_generation")
+    client = LLM_Manager.get_model(model_name)
     out = client.generate(prompt)
     out_sources = query_blog(out, n_results=100)
     best_sources = get_best_sources(prompt_sources, out_sources)
